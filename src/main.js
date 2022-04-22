@@ -8,8 +8,6 @@ Vue.use(VueGoogleMaps, {
   load: {
     key:"AIzaSyCCdBMbyv2BWnzi0frpRk-exwW2qUDc6CU",
     libraries: "places", // necessary for places input
-    region: 'JP',
-    language: 'ja'
   }
 });
 
