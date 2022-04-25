@@ -2,10 +2,10 @@
   <div>
     <div>
       <h2>Search and add a pin</h2>
-      <!-- <GmapAutocomplete
-        @place_changed='setPlace'/> -->
-      <!-- <button
-      @click='addMarker'>Add</button> -->
+      <GmapAutocomplete
+        @place_changed='setPlace'/>
+      <button
+      @click='addMarker'>Add</button>
     </div>
     <br>
     <GmapMap
@@ -18,16 +18,18 @@
       :key="index"
         v-for="(m, index) in markers"
         :position="m.position"
+        :title="m.title"
         @click="center=m.position"
         :clickable="true"
-        :draggable="true"/>
-    <!-- <GmapInfoWindow
-      :position="balloon.position"
+        :draggable="false"/>
+
+    <GmapInfoWindow
+      :position="m.position"
       :opened="clicked"
       @closeclick="closeFunc"
     >
       <p>メッセージ</p>
-    </GmapInfoWindow> -->
+    </GmapInfoWindow>
     
     </GmapMap>
 
@@ -39,11 +41,12 @@ export default {
   name: "GoogleMap",
   data() {
     return {
-      center: { lat: 45.508, lng: -73.587 },
+      center: { lat: 34.66805743673945, lng: 135.4314218263413 },
       currentPlace: null,
       markers: [
-        { id: 1, position: { lat: 34.66805743673945, lng: 135.4314218263413 } },
-      ],
+        { id: 1, position: { lat: 34.66805743673945, lng: 135.4314218263413 } ,},
+        { id: 2, position: { lat: 40.676102747443544, lng: 140.76764207077298 } ,},
+      ], 
       places: [],
       styles: [{
         "featureType": "water",
