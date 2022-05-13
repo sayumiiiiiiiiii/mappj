@@ -1,7 +1,7 @@
 import Vue from 'vue'
 import VueRouter from 'vue-router'
 import HomeView from '../views/HomeView.vue'
-import MapView from '../views/MapView.vue'
+import GoogleMap from '../views/GoogleMap.vue'
 import NoteView from '../views/NoteView.vue'
 
 Vue.use(VueRouter)
@@ -15,7 +15,7 @@ const routes = [
   {
     path: '/map',
     name: 'map',
-    component: MapView
+    component: GoogleMap
   },
   {
     path: '/note',
