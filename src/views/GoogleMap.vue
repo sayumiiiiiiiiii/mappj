@@ -16,20 +16,25 @@
       <GmapMarker
         v-for="(m, index) in markers"
         :key="`first-${index}`"
-        :position="m.position"
+      
+        :position="{lat:m.position.latitude, lng:m.position.longitude}"
         :title="m.title"
         :clickable="true"
         :draggable="false"
         @click="toggleInfoWindow(m)">
-
-
+        <!-- 元のコード -->
+        <!-- :position="m.position" -->
+<!-- 40.676102747443544 
+140.76764207077298
+        35.7056232
+        139.751919-->
+ 
 
         </GmapMarker>
-
       <GmapInfoWindow
         v-for="(m, index) in markers"
         :key="`second-${index}`"
-        :position="m.position"
+        :position="{lat:m.position.latitude, lng:m.position.longitude}"
         :opened="m.infoWinOpen"
         @closeclick="m.infoWinOpen = false">
         <div class="infowindow">
@@ -67,12 +72,11 @@
           <h2 class="mv__ttl">登録済メニューリスト</h2>
 
            <!-- とりあえず表示 -->
-          <li v-for="(marker, index) in markers" :key="index">
+        <li v-for="(marker, index) in markers" :key="index">
           <p v-if="marker.id">{{ marker.id }}</p>
           <ul>
-              <li v-for="(posi, index) in markers[0]" :key="index">
-              <p>{{ posi._lat }}</p>
-              <p>{{ posi._long }}</p>
+            <li v-for="(posi, index) in markers[index].position" :key="index">
+              <p v-if="posi">{{ posi }}</p>
             </li>
           </ul>
         </li>
@@ -92,10 +96,12 @@
 </template>
 
 <script>
-import {db, storage} from '@/firebase/firebase';
+// import {db, storage} from '@/firebase/firebase';
+import {db} from '@/firebase/firebase';
 //
-import {collection, addDoc, serverTimestamp, onSnapshot, query, orderBy, where, deleteDoc, getDocs, doc} from 'firebase/firestore';
-import {getDownloadURL, ref, uploadBytesResumable, deleteObject} from 'firebase/storage';
+// import {collection, addDoc, serverTimestamp, onSnapshot, query, orderBy, where, deleteDoc, getDocs, doc} from 'firebase/firestore';
+import {collection, addDoc, serverTimestamp, onSnapshot, query, orderBy} from 'firebase/firestore';
+// import {getDownloadURL, ref, uploadBytesResumable, deleteObject} from 'firebase/storage';
 // import marker from 'vue2-google-maps/dist/components/marker';
 //<!-- <p>firebase</p> -->
 export default {
@@ -105,19 +111,19 @@ export default {
     return {
       //<!-- <p>firebase</p> -->
 
-      menuId: 0,//メニューID
-      menuName: '',//メニュー名
-      menuTxt: '',//メニュー説明文
-      menuImgUrl: '',//メニュー画像URL
-      menuImgFile: '',//メニュー画像ファイル名
-      file: '',//メニュー画像ファイル
-      menus: [],//描画用データ
+      // menuId: 0,//メニューID
+      // menuName: '',//メニュー名
+      // menuTxt: '',//メニュー説明文
+      // menuImgUrl: '',//メニュー画像URL
+      // menuImgFile: '',//メニュー画像ファイル名
+      // file: '',//メニュー画像ファイル
+      // menus: [],//描画用データ
       //<!-- <p>firebase</p> -->
 
 
 
       center: { lat: 34.659534285068204, lng: 138.9266236723882 },
-      currentPlace: [],
+      currentPlace: null,
       // markers: [
       //   {
       //     id: 1,
@@ -136,9 +142,12 @@ export default {
       // firebaseで登録した内容
       markers: [],
       id: 0,//id（マーカー用）
-      position: [],
-      // lat: '',
-      // lng: '',
+      // position: [],
+     
+      // latitude: '',
+      // longitude: '',
+      lat: '',
+      lng: '',
       infoWinOpen: false,
       
       nextId: 3,
@@ -351,7 +360,7 @@ export default {
 mounted(){
   //marker
 
-    //firestore内のデータの変化を受け取り、描画用データmenusに反映
+    //firestore内のデータの変化を受け取り、描画用データmarkersに反映
     const m = query(collection(db, 'markers'), orderBy('id'))
     onSnapshot(m, snapshot => {
       //dBのすべてのmenuIdを取得
@@ -378,40 +387,41 @@ mounted(){
     });
 
 
-    //firestore内のデータの変化を受け取り、描画用データmenusに反映
-    const q = query(collection(db, 'menus'), orderBy('menuId'))
-    onSnapshot(q, snapshot => {
-      //dBのすべてのmenuIdを取得
-      const allId = snapshot.docs.map(doc => {
-        return doc.data().menuId;
-      })
-      //現在最大値のID番号を代入
-      if(allId.length > 0) {
-        this.menuId = allId.reduce((a,b)=>a>b?a:b);
-      }
-      snapshot.docChanges().forEach(change => {
-        if (change.type === 'added') {
-          this.menus.push(change.doc.data());
-          console.log('added', change.doc.data())
-        }
-        if(change.type === 'removed') {
-          console.log('Removed', change.doc.data());
-          const currentArry = this.menus.filter(menu => {
-            return menu.menuId !== change.doc.data().menuId;
-          })
-          this.menus = currentArry;
-        }
-      })
-    })
+    // //firestore内のデータの変化を受け取り、描画用データmenusに反映
+    // const q = query(collection(db, 'menus'), orderBy('menuId'))
+    // onSnapshot(q, snapshot => {
+    //   //dBのすべてのmenuIdを取得
+    //   const allId = snapshot.docs.map(doc => {
+    //     return doc.data().menuId;
+    //   })
+    //   //現在最大値のID番号を代入
+    //   if(allId.length > 0) {
+    //     this.menuId = allId.reduce((a,b)=>a>b?a:b);
+    //   }
+    //   snapshot.docChanges().forEach(change => {
+    //     if (change.type === 'added') {
+    //       this.menus.push(change.doc.data());
+    //       console.log('added', change.doc.data())
+    //     }
+    //     if(change.type === 'removed') {
+    //       console.log('Removed', change.doc.data());
+    //       const currentArry = this.menus.filter(menu => {
+    //         return menu.menuId !== change.doc.data().menuId;
+    //       })
+    //       this.menus = currentArry;
+    //     }
+    //   })
+    // })
   },
 //<!-- <p>firebase</p> -->
 
   methods: {
     //<!-- <p>firebase</p> -->
     //firestoreにデータを追加
-    addMenu() {
-      addDoc(collection(db, 'menus'), {
-        menuId: this.menuId += 1,
+    saveMarker() {
+      addDoc(collection(db, 'markers'), {
+        nowMarker:this.nowMarker,
+  
         menuName: this.menuName,
         menuTxt: this.menuTxt,
         created: serverTimestamp(),
@@ -433,59 +443,59 @@ mounted(){
       })
     },
     //firestoreのデータを削除
-    async removeMenu(id, photo) {
-      //削除ボタンをクリックした商品データをfirestore内から削除
-      const delQuery = query(collection(db, 'menus'), where('menuId', '==', id))
-      const delSnapshot = await getDocs(delQuery);
-      delSnapshot.forEach((delSnap) => {
-        // console.log(doc.id, " => ", doc.data());
-        console.log(delSnap.id);
-        deleteDoc(doc(db, 'menus', delSnap.id));
-      });
-      //storage内の画像データも同時に削除
-      if(photo) {
-        const delPhotoRef = ref(storage, `images/${photo}`);
-        deleteObject(delPhotoRef).then(() => {
-          console.log("Photo deleted successfully")
-        }).catch((error) => {
-          console.log("Error Photo deleted", error)
-        });
+    // async removeMenu(id, photo) {
+    //   //削除ボタンをクリックした商品データをfirestore内から削除
+    //   const delQuery = query(collection(db, 'menus'), where('menuId', '==', id))
+    //   const delSnapshot = await getDocs(delQuery);
+    //   delSnapshot.forEach((delSnap) => {
+    //     // console.log(doc.id, " => ", doc.data());
+    //     console.log(delSnap.id);
+    //     deleteDoc(doc(db, 'menus', delSnap.id));
+    //   });
+    //   //storage内の画像データも同時に削除
+    //   if(photo) {
+    //     const delPhotoRef = ref(storage, `images/${photo}`);
+    //     deleteObject(delPhotoRef).then(() => {
+    //       console.log("Photo deleted successfully")
+    //     }).catch((error) => {
+    //       console.log("Error Photo deleted", error)
+    //     });
         // console.log('インデックス',id);
-      }
+    //   }
 
-    },
+    // },
     //画像データをアップロード
     // imgUpload(e) {
-    imgUpload() {
-      //ファイルの取得
-      this.file = this.$refs.imgUp.files[0];
-      // this.file = e.target.files[0];
-      //画像ファイルへの参照を作成
-      const userImageRef = ref(storage, `images/${this.file.name}`)
-      //画像ファイルのアップロードメソッド
-      uploadBytesResumable(userImageRef, this.file).then((snapshot) => {
-        console.log('Uploaded a blob or file!', snapshot);
-        getDownloadURL(snapshot.ref)
-        .then((downloadURL) => {
-          //firestoreにURLとファイル名を保存するため
-          this.menuImgUrl = downloadURL;
-          this.menuImgFile = this.file.name;
-          console.log('Success!', downloadURL);
-        })
-        .catch((error) => {
-          console.error(error)
-        })
-      });
-    },
+    // imgUpload() {
+    //   //ファイルの取得
+    //   this.file = this.$refs.imgUp.files[0];
+    //   // this.file = e.target.files[0];
+    //   //画像ファイルへの参照を作成
+    //   const userImageRef = ref(storage, `images/${this.file.name}`)
+    //   //画像ファイルのアップロードメソッド
+    //   uploadBytesResumable(userImageRef, this.file).then((snapshot) => {
+    //     console.log('Uploaded a blob or file!', snapshot);
+    //     getDownloadURL(snapshot.ref)
+    //     .then((downloadURL) => {
+    //       //firestoreにURLとファイル名を保存するため
+    //       this.menuImgUrl = downloadURL;
+    //       this.menuImgFile = this.file.name;
+    //       console.log('Success!', downloadURL);
+    //     })
+    //     .catch((error) => {
+    //       console.error(error)
+    //     })
+    //   });
+    // },
   
 
 //<!-- <p>firebase</p> -->
 
 
 
-      note() {
+    note() {
           this.$router.push('./note')
-      },
+    },
     openOriginalWindow(d) {
       console.log("OK?");
       this.nowMarker = d;
@@ -496,8 +506,8 @@ mounted(){
     addMarker() {
       if (this.currentPlace) {
         const marker = {
-          lat: this.currentPlace.geometry.location.lat(),
-          lng: this.currentPlace.geometry.location.lng(),
+          latitude: this.currentPlace.geometry.location.lat(),
+          longitude: this.currentPlace.geometry.location.lng(),
         };
         this.markers.push({
           id: this.nextId,
@@ -505,6 +515,7 @@ mounted(){
           infoWinOpen: false,
         });
         // this.places.push(this.currentPlace);
+        console.log(this.markers)
         this.center = marker;
         this.currentPlace = null;
         this.nextId++;
