@@ -14,14 +14,14 @@
       :options="{ styles: styles }"
     >
       <GmapMarker
-        v-for="(p, index) in pins"
+        v-for="(m, index) in markers"
         :key="`first-${index}`"
       
-        :position="{lat:p.markers.latitude, lng:p.markers.longitude}"
-        :title="p.title"
+        :position="{lat:m.position.latitude, lng:m.position.longitude}"
+        :title="m.title"
         :clickable="true"
         :draggable="false"
-        @click="toggleInfoWindow(p)">
+        @click="toggleInfoWindow(m)">
         <!-- 元のコード -->
         <!-- :position="m.position" -->
 <!-- 40.676102747443544 
@@ -32,11 +32,11 @@
 
         </GmapMarker>
       <GmapInfoWindow
-        v-for="(p, index) in pins"
+        v-for="(m, index) in markers"
         :key="`second-${index}`"
-        :position="{lat:p.markers.latitude, lng:p.markers.longitude}"
-        :opened="p.infoWinOpen"
-        @closeclick="p.infoWinOpen = false">
+        :position="{lat:m.position.latitude, lng:m.position.longitude}"
+        :opened="m.infoWinOpen"
+        @closeclick="m.infoWinOpen = false">
         <div class="infowindow">
             <!-- <p>{{ m.message }}</p> -->
             <div id="btn">
