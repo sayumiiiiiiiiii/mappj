@@ -47,11 +47,12 @@
                     <option value="C">👎🏽</option>
                     <option value="D">⭐️</option>
                 </select><br>
-                
+                <button @click="saveMarker" class="btn_confirm">add on firebase</button>
                 <button v-on:click="note">✏️COMMENT</button><br>
-                <!-- <textarea name="comment" id="" cols="30" rows="10"></textarea> -->
-                <!-- <label>place:<input v-model="regName" type="text"></label><br>
-                <button>submit</button><br> -->
+                <!-- <textarea name="comment" id="" cols="30" rows="10"></textarea> --> 
+                <label>place:<input v-model="regName" type="text"></label><br> 
+                
+                <!-- <button>submit</button><br> -->
             </div>
         </div>
 
@@ -64,21 +65,22 @@
           <h2 class="mv__ttl">add marker</h2>
           <h3>Save On firebase</h3>
           <!-- <label>name of the place：<input v-model="place" type="text"></label> -->
-          <button @click="saveMarker" class="btn_confirm">add on firebase</button>
+          
           <h2 class="mv__ttl">LIST</h2>
 
           <!-- とりあえず表示 -->
-        <ul class="regi_pins">
-          <li v-for="(pin, index) in pins" :key="index">
-            <p v-if="pin.id">{{ pin.id }}</p>
+        <ul class="regi_markers">
+          <li v-for="(marker, index) in markers" :key="index">
+            <p v-if="marker.id">{{ marker.id }}</p>
+            <p v-if="marker.regName">{{ marker.regName }}</p>
             <!-- <p v-if="pin.place">{{ pin.place }}</p> -->
             <ul>
-              <li v-for="(marker, index) in pins[index].markers" :key="index">
+              <li v-for="(marker, index) in markers[index].position" :key="index">
                 <p v-if="marker">{{ marker }}</p>
               </li>
             </ul>
-          <p v-if="pin.pinImgUrl"><img :src="pin.pinImgUrl" alt=""></p>
-          <button @click="removeMarker(pin.id, pin.pinImgFile)">delite</button>
+          <p v-if="marker.markerImgUrl"><img :src="marker.markerImgUrl" alt=""></p>
+          <button @click="removeMarker(marker.id, marker.markerImgFile)">delite</button>
           </li>
         </ul>
         </div><!--copy__wrapper-->
@@ -119,7 +121,7 @@ export default {
       // ],
 
       // firebaseで登録した内容
-      pins: [],
+      // pins: [],
       id: 0,//id（マーカー用）
       position: [],
       markers: [],
@@ -132,16 +134,16 @@ export default {
       infoWinOpen: false,
       places: '',
 
-      nextId: 3,
+      nextId: 1,
       nowMarker: {},
 
 
-      pinImgUrl: '',
-      pinImgFile: '',
+      markerImgUrl: '',
+      markerImgFile: '',
       file: '',
 
 
-
+      regName: '',
       styles: [
         {
           featureType: "water",
@@ -350,7 +352,7 @@ mounted(){
   //marker
 
     //firestore内のデータの変化を受け取り、描画用データmarkersに反映    MAP
-    const m = query(collection(db, 'pins'), orderBy('id'))
+    const m = query(collection(db, 'markers'), orderBy('id'))
     onSnapshot(m, snapshot => {
       //dBのすべてのmenuIdを取得
       const allId = snapshot.docs.map(doc => {
@@ -362,15 +364,15 @@ mounted(){
       }
       snapshot.docChanges().forEach(change => {
         if (change.type === 'added') {
-          this.pins.push(change.doc.data());
+          this.markers.push(change.doc.data());
           console.log('added', change.doc.data())
         }
         if(change.type === 'removed') {
           console.log('Removed', change.doc.data());
-          const currentArry = this.pins.filter(pin => {
-            return pin.id !== change.doc.data().id;
+          const currentArry = this.markers.filter(marker => {
+            return marker.id !== change.doc.data().id;
           })
-          this.pins = currentArry;
+          this.markers = currentArry;
         }
       })
     });
@@ -408,25 +410,32 @@ mounted(){
     //<!-- <p>firebase</p> -->
     //firestoreにデータを追加 map
     saveMarker() {
-      addDoc(collection(db, 'pins'), {
-        id: this.id += 1,
+      addDoc(collection(db, 'markers'), {
+        // id: this.id += 1,
+        id: this.nextId,
         // markers: new GeoPoint(Number(this.latitude), Number(this.longitude)),
-        markers: new GeoPoint(Number(this.nowMarker.position.latitude), Number(this.nowMarker.position.longitude)),
+        position: new GeoPoint(Number(this.nowMarker.position.latitude), Number(this.nowMarker.position.longitude)),
         // menuTxt: this.menuTxt,
         // place: this.place,
+        infoWinOpen: false,
         created: serverTimestamp(),
-        pinImgUrl: this.pinImgUrl,
-        pinImgFile: this.pinImgFile,
+        markerImgUrl: this.markerImgUrl,
+        markerImgFile: this.markerImgFile,
+        regName: this.regName,
       })
       .then((doc) => {
         console.log(`データ追加に成功しました（${doc.id}）`);
+        this.markers.splice(-1,1)   // 
         //追加に成功したら入力データを空にする
         this.latitude = '';
         this.longitude = '';
         this.file = '';
+        this.regName = '',
         // this.place = '';
-        const markerImgUrlRemain = document.getElementById('fileImg');
-        markerImgUrlRemain.value = '';
+        // const markerImgUrlRemain = document.getElementById('fileImg');
+        // markerImgUrlRemain.value = '';
+
+        this.nextId++;
       })
       .catch(error => {
         //エラー時の処理
@@ -436,12 +445,12 @@ mounted(){
     //firestoreのデータを削除
     async removeMarker(id, photo) {
       //削除ボタンをクリックした商品データをfirestore内から削除
-      const delQuery = query(collection(db, 'pins'), where('id', '==', id))
+      const delQuery = query(collection(db, 'markers'), where('id', '==', id))
       const delSnapshot = await getDocs(delQuery);
       delSnapshot.forEach((delSnap) => {
         // console.log(doc.id, " => ", doc.data());
         console.log(delSnap.id);
-        deleteDoc(doc(db, 'pins', delSnap.id));
+        deleteDoc(doc(db, 'markers', delSnap.id));
       });
       //storage内の画像データも同時に削除
       if(photo) {
@@ -454,7 +463,7 @@ mounted(){
         // console.log('インデックス',id);
       }
     },
-    //画像データをアップロード
+    //画像データをアップロード（まだやってない！！！）
     imgUpload() {
       //ファイルの取得
       this.file = this.$refs.imgUp.files[0];
@@ -467,8 +476,8 @@ mounted(){
         getDownloadURL(snapshot.ref)
         .then((downloadURL) => {
           //firestoreにURLとファイル名を保存するため
-          this.pinImgUrl = downloadURL;
-          this.pinImgFile = this.file.name;
+          this.markermgUrl = downloadURL;
+          this.markerImgFile = this.file.name;
           console.log('Success!', downloadURL);
         })
         .catch((error) => {
@@ -498,22 +507,26 @@ mounted(){
           latitude: this.currentPlace.geometry.location.lat(),
           longitude: this.currentPlace.geometry.location.lng(),
         };
+        
         this.markers.push({
           id: this.nextId,
           position: marker,
           infoWinOpen: false,
           place: this.place,
+          regName: this.regName
         });
         // this.places.push(this.currentPlace);
         console.log(this.markers)
         this.center = marker;
         this.currentPlace = null;
-        this.nextId++;
+        // this.nextId++;
       }
     },
     geolocate: function () {
       navigator.geolocation.getCurrentPosition((position) => {
         this.center = {
+          // lat: position.coords.latitude,
+          // lng: position.coords.longitude,
           lat: position.coords.latitude,
           lng: position.coords.longitude,
         };
@@ -535,7 +548,7 @@ mounted(){
     max-width: 100% !important;
     width: 100%;
 } */
-.miniwindow {
+/* .miniwindow {
   width: 300px;
   height: 900px;
   background-color: #fff;
@@ -546,20 +559,20 @@ mounted(){
   bottom: 0;
   z-index: 100;
   opacity: 60%;
-}
+} */
 
 .gm-style-iw {
   position: relative !important;
   /* max-width: 100% !important; */
-  top: 250px !important;
-  left: 0 !important;
+  /* top: 250px !important; */
+  /* left: 0 !important; */
 }
 
 .gm-style img {
   width: 10%;
 }
-.gm-style .gm-style-iw-t::after {
+/* .gm-style .gm-style-iw-t::after {
     display: none;
-}
+} */
 
 </style>

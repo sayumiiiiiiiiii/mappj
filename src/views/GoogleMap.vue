@@ -14,14 +14,14 @@
       :options="{ styles: styles }"
     >
       <GmapMarker
-        v-for="(p, index) in pins"
+        v-for="(m, index) in markers"
         :key="`first-${index}`"
       
-        :position="{lat:p.markers.latitude, lng:p.markers.longitude}"
-        :title="p.title"
+        :position="{lat:m.position.latitude, lng:m.position.longitude}"
+        :title="m.title"
         :clickable="true"
         :draggable="false"
-        @click="toggleInfoWindow(p)">
+        @click="toggleInfoWindow(m)">
         <!-- 元のコード -->
         <!-- :position="m.position" -->
 <!-- 40.676102747443544 
@@ -32,26 +32,35 @@
 
         </GmapMarker>
       <GmapInfoWindow
-        v-for="(p, index) in pins"
+        v-for="(m, index) in markers"
         :key="`second-${index}`"
-        :position="{lat:p.markers.latitude, lng:p.markers.longitude}"
-        :opened="p.infoWinOpen"
-        @closeclick="p.infoWinOpen = false">
+        :position="{lat:m.position.latitude, lng:m.position.longitude}"
+        :opened="m.infoWinOpen"
+        @closeclick="m.infoWinOpen = false">
         <div class="infowindow">
-            <!-- <p>{{ m.message }}</p> -->
             <div id="btn">
-                <select class="emoji">
+                <select v-model="reaction">
                     <option value="">❤️REACTIONS</option>
-                    <option value="A">❤️</option>
-                    <option value="B">👍🏽</option>
-                    <option value="C">👎🏽</option>
-                    <option value="D">⭐️</option>
+                    <option value="❤️">❤️</option>
+                    <option value="👍🏽">👍🏽</option>
+                    <option value="👎🏽">👎🏽</option>
+                    <option value="⭐️">⭐️</option>
                 </select><br>
                 
-                <button v-on:click="note">✏️COMMENT</button><br>
-                <!-- <textarea name="comment" id="" cols="30" rows="10"></textarea> -->
-                <!-- <label>place:<input v-model="regName" type="text"></label><br>
-                <button>submit</button><br> -->
+                <!-- <button v-on:click="note">✏️</button><br> -->
+                <!-- <textarea name="comment" id="" cols="30" rows="10"></textarea> --> 
+                <label>place:<input v-model="regName" type="text"></label><br> 
+                <label>photo：<input ref="imgUp" type="file" id="fileImg" @change="imageDataUpdate(index)" multiple></label>
+                <button @click="imgUpload">アップロード</button>
+                <button @click="saveMarker" class="btn_confirm">add on firebase</button>
+                <p>{{ m.regName }} {{ m.reaction }}</p>
+                <!-- <ul>
+                  <li v-for="(miu, index) in markers[index].markerImgUrl" :key="index">
+                    <p v-if="miu"><img :src="miu" alt=""></p>
+                  </li>
+                </ul> -->
+                <button @click="removeMarker(m.id, m.markerImgFile)">マーカー削除</button>
+                <!-- <button>submit</button><br> -->
             </div>
         </div>
 
@@ -64,21 +73,27 @@
           <h2 class="mv__ttl">add marker</h2>
           <h3>Save On firebase</h3>
           <!-- <label>name of the place：<input v-model="place" type="text"></label> -->
-          <button @click="saveMarker" class="btn_confirm">add on firebase</button>
+          
           <h2 class="mv__ttl">LIST</h2>
 
           <!-- とりあえず表示 -->
-        <ul class="regi_pins">
-          <li v-for="(pin, index) in pins" :key="index">
-            <p v-if="pin.id">{{ pin.id }}</p>
+        <ul class="regi_markers">
+          <li v-for="(marker, index) in markers" :key="index">
+            <p v-if="marker.id">{{ marker.id }}</p>
+            <p v-if="marker.regName">{{ marker.regName }}</p>
             <!-- <p v-if="pin.place">{{ pin.place }}</p> -->
             <ul>
-              <li v-for="(marker, index) in pins[index].markers" :key="index">
-                <p v-if="marker">{{ marker }}</p>
+              <li v-for="(posi, index) in markers[index].position" :key="index">
+                <p v-if="posi">{{ posi }}</p>
               </li>
             </ul>
-          <p v-if="pin.pinImgUrl"><img :src="pin.pinImgUrl" alt=""></p>
-          <button @click="removeMarker(pin.id, pin.pinImgFile)">delite</button>
+            <!-- <img style="width: 20%; height: 20%;" :src="marker.markerImgUrl"> -->
+            <ul class="mius">
+              <li v-for="(miu, index) in markers[index].markerImgUrl" :key="index">
+                <p v-if="miu"><img :src="miu" alt=""></p>
+              </li>
+            </ul>
+          <button @click="removeMarker(marker.id, marker.markerImgFile)">delete</button>
           </li>
         </ul>
         </div><!--copy__wrapper-->
@@ -119,7 +134,7 @@ export default {
       // ],
 
       // firebaseで登録した内容
-      pins: [],
+      // pins: [],
       id: 0,//id（マーカー用）
       position: [],
       markers: [],
@@ -132,214 +147,300 @@ export default {
       infoWinOpen: false,
       places: '',
 
-      nextId: 3,
+      // nextId: 1,
       nowMarker: {},
 
 
-      pinImgUrl: '',
-      pinImgFile: '',
-      file: '',
+      markerImgUrl: [],
+      markerImgFile:[],
+      file: [],
 
-
-
+      reaction: '',
+      regName: '',
       styles: [
-        {
-          featureType: "water",
-          stylers: [
+    {
+        "featureType": "administrative.country",
+        "elementType": "all",
+        "stylers": [
             {
-              color: "#19a0d8",
-            },
-          ],
-        },
-        {
-          featureType: "administrative",
-          elementType: "labels.text.stroke",
-          stylers: [
+                "visibility": "simplified"
+            }
+        ]
+    },
+    {
+        "featureType": "administrative.country",
+        "elementType": "geometry",
+        "stylers": [
             {
-              color: "#ffffff",
-            },
-            {
-              weight: 6,
-            },
-          ],
-        },
-        {
-          featureType: "administrative",
-          elementType: "labels.text.fill",
-          stylers: [
-            {
-              color: "#e85113",
-            },
-          ],
-        },
-        {
-          featureType: "road.highway",
-          elementType: "geometry.stroke",
-          stylers: [
-            {
-              color: "#efe9e4",
+                "visibility": "on"
             },
             {
-              lightness: -40,
-            },
-          ],
-        },
-        {
-          featureType: "road.arterial",
-          elementType: "geometry.stroke",
-          stylers: [
+                "color": "#eace9e"
+            }
+        ]
+    },
+    {
+        "featureType": "administrative.country",
+        "elementType": "geometry.fill",
+        "stylers": [
             {
-              color: "#efe9e4",
-            },
+                "hue": "#ff0000"
+            }
+        ]
+    },
+    {
+        "featureType": "administrative.country",
+        "elementType": "labels",
+        "stylers": [
             {
-              lightness: -20,
-            },
-          ],
-        },
-        {
-          featureType: "road",
-          elementType: "labels.text.stroke",
-          stylers: [
+                "color": "#ad8f5a"
+            }
+        ]
+    },
+    {
+        "featureType": "administrative.province",
+        "elementType": "all",
+        "stylers": [
             {
-              lightness: 100,
-            },
-          ],
-        },
-        {
-          featureType: "road",
-          elementType: "labels.text.fill",
-          stylers: [
-            {
-              lightness: -100,
-            },
-          ],
-        },
-        {
-          featureType: "road.highway",
-          elementType: "labels.icon",
-        },
-        {
-          featureType: "landscape",
-          elementType: "labels",
-          stylers: [
-            {
-              visibility: "off",
-            },
-          ],
-        },
-        {
-          featureType: "landscape",
-          stylers: [
-            {
-              lightness: 20,
+                "visibility": "simplified"
             },
             {
-              color: "#efe9e4",
-            },
-          ],
-        },
-        {
-          featureType: "landscape.man_made",
-          stylers: [
+                "color": "#b77510"
+            }
+        ]
+    },
+    {
+        "featureType": "administrative.locality",
+        "elementType": "all",
+        "stylers": [
             {
-              visibility: "off",
-            },
-          ],
-        },
-        {
-          featureType: "water",
-          elementType: "labels.text.stroke",
-          stylers: [
-            {
-              lightness: 100,
-            },
-          ],
-        },
-        {
-          featureType: "water",
-          elementType: "labels.text.fill",
-          stylers: [
-            {
-              lightness: -100,
-            },
-          ],
-        },
-        {
-          featureType: "poi",
-          elementType: "labels.text.fill",
-          stylers: [
-            {
-              hue: "#11ff00",
-            },
-          ],
-        },
-        {
-          featureType: "poi",
-          elementType: "labels.text.stroke",
-          stylers: [
-            {
-              lightness: 100,
-            },
-          ],
-        },
-        {
-          featureType: "poi",
-          elementType: "labels.icon",
-          stylers: [
-            {
-              hue: "#4cff00",
+                "visibility": "simplified"
             },
             {
-              saturation: 58,
-            },
-          ],
-        },
-        {
-          featureType: "poi",
-          elementType: "geometry",
-          stylers: [
+                "color": "#876118"
+            }
+        ]
+    },
+    {
+        "featureType": "administrative.neighborhood",
+        "elementType": "all",
+        "stylers": [
             {
-              visibility: "on",
-            },
+                "visibility": "off"
+            }
+        ]
+    },
+    {
+        "featureType": "administrative.land_parcel",
+        "elementType": "all",
+        "stylers": [
             {
-              color: "#f0e4d3",
-            },
-          ],
-        },
-        {
-          featureType: "road.highway",
-          elementType: "geometry.fill",
-          stylers: [
+                "visibility": "off"
+            }
+        ]
+    },
+    {
+        "featureType": "landscape",
+        "elementType": "all",
+        "stylers": [
             {
-              color: "#efe9e4",
-            },
-            {
-              lightness: -25,
-            },
-          ],
-        },
-        {
-          featureType: "road.arterial",
-          elementType: "geometry.fill",
-          stylers: [
-            {
-              color: "#efe9e4",
+                "visibility": "on"
             },
             {
-              lightness: -10,
+                "weight": "4"
             },
-          ],
-        },
-        {
-          featureType: "poi",
-          elementType: "labels",
-          stylers: [
             {
-              visibility: "simplified",
+                "hue": "#ffa900"
+            }
+        ]
+    },
+    {
+        "featureType": "landscape",
+        "elementType": "geometry",
+        "stylers": [
+            {
+                "visibility": "on"
+            }
+        ]
+    },
+    {
+        "featureType": "landscape.natural",
+        "elementType": "all",
+        "stylers": [
+            {
+                "visibility": "off"
+            }
+        ]
+    },
+    {
+        "featureType": "landscape.natural.landcover",
+        "elementType": "all",
+        "stylers": [
+            {
+                "visibility": "on"
+            }
+        ]
+    },
+    {
+        "featureType": "landscape.natural.landcover",
+        "elementType": "geometry",
+        "stylers": [
+            {
+                "hue": "#ff9a00"
             },
-          ],
-        },
-      ],
+            {
+                "visibility": "on"
+            }
+        ]
+    },
+    {
+        "featureType": "landscape.natural.terrain",
+        "elementType": "all",
+        "stylers": [
+            {
+                "visibility": "on"
+            }
+        ]
+    },
+    {
+        "featureType": "poi",
+        "elementType": "all",
+        "stylers": [
+            {
+                "visibility": "on"
+            }
+        ]
+    },
+    {
+        "featureType": "poi.attraction",
+        "elementType": "all",
+        "stylers": [
+            {
+                "visibility": "off"
+            }
+        ]
+    },
+    {
+        "featureType": "poi.business",
+        "elementType": "all",
+        "stylers": [
+            {
+                "visibility": "off"
+            }
+        ]
+    },
+    {
+        "featureType": "poi.government",
+        "elementType": "all",
+        "stylers": [
+            {
+                "visibility": "off"
+            }
+        ]
+    },
+    {
+        "featureType": "poi.medical",
+        "elementType": "all",
+        "stylers": [
+            {
+                "visibility": "off"
+            }
+        ]
+    },
+    {
+        "featureType": "poi.park",
+        "elementType": "all",
+        "stylers": [
+            {
+                "visibility": "on"
+            }
+        ]
+    },
+    {
+        "featureType": "poi.place_of_worship",
+        "elementType": "all",
+        "stylers": [
+            {
+                "visibility": "off"
+            }
+        ]
+    },
+    {
+        "featureType": "poi.school",
+        "elementType": "all",
+        "stylers": [
+            {
+                "visibility": "off"
+            }
+        ]
+    },
+    {
+        "featureType": "poi.sports_complex",
+        "elementType": "all",
+        "stylers": [
+            {
+                "visibility": "off"
+            }
+        ]
+    },
+    {
+        "featureType": "road.highway",
+        "elementType": "all",
+        "stylers": [
+            {
+                "visibility": "off"
+            }
+        ]
+    },
+    {
+        "featureType": "road.highway.controlled_access",
+        "elementType": "all",
+        "stylers": [
+            {
+                "visibility": "off"
+            }
+        ]
+    },
+    {
+        "featureType": "road.arterial",
+        "elementType": "all",
+        "stylers": [
+            {
+                "visibility": "off"
+            }
+        ]
+    },
+    {
+        "featureType": "road.local",
+        "elementType": "all",
+        "stylers": [
+            {
+                "visibility": "off"
+            }
+        ]
+    },
+    {
+        "featureType": "transit",
+        "elementType": "all",
+        "stylers": [
+            {
+                "visibility": "off"
+            }
+        ]
+    },
+    {
+        "featureType": "water",
+        "elementType": "all",
+        "stylers": [
+            {
+                "visibility": "on"
+            },
+            {
+                "color": "#86bcc4"
+            }
+        ]
+    }
+],
     };
   },
   // mounted() {
@@ -350,7 +451,7 @@ mounted(){
   //marker
 
     //firestore内のデータの変化を受け取り、描画用データmarkersに反映    MAP
-    const m = query(collection(db, 'pins'), orderBy('id'))
+    const m = query(collection(db, 'markers'), orderBy('id'))
     onSnapshot(m, snapshot => {
       //dBのすべてのmenuIdを取得
       const allId = snapshot.docs.map(doc => {
@@ -362,45 +463,18 @@ mounted(){
       }
       snapshot.docChanges().forEach(change => {
         if (change.type === 'added') {
-          this.pins.push(change.doc.data());
+          this.markers.push(change.doc.data());
           console.log('added', change.doc.data())
         }
         if(change.type === 'removed') {
           console.log('Removed', change.doc.data());
-          const currentArry = this.pins.filter(pin => {
-            return pin.id !== change.doc.data().id;
+          const currentArry = this.markers.filter(marker => {
+            return marker.id !== change.doc.data().id;
           })
-          this.pins = currentArry;
+          this.markers = currentArry;
         }
       })
-    });
-
-
-    //firestore内のデータの変化を受け取り、描画用データmenusに反映
-    // const q = query(collection(db, 'menus'), orderBy('menuId'))
-    // onSnapshot(q, snapshot => {
-    //   //dBのすべてのmenuIdを取得
-    //   const allId = snapshot.docs.map(doc => {
-    //     return doc.data().menuId;
-    //   })
-    //   //現在最大値のID番号を代入
-    //   if(allId.length > 0) {
-    //     this.menuId = allId.reduce((a,b)=>a>b?a:b);
-    //   }
-    //   snapshot.docChanges().forEach(change => {
-    //     if (change.type === 'added') {
-    //       this.menus.push(change.doc.data());
-    //       console.log('added', change.doc.data())
-    //     }
-    //     if(change.type === 'removed') {
-    //       console.log('Removed', change.doc.data());
-    //       const currentArry = this.menus.filter(menu => {
-    //         return menu.menuId !== change.doc.data().menuId;
-    //       })
-    //       this.menus = currentArry;
-    //     }
-    //   })
-    // })
+    })
   },
 //<!-- <p>firebase</p> -->
 
@@ -408,25 +482,35 @@ mounted(){
     //<!-- <p>firebase</p> -->
     //firestoreにデータを追加 map
     saveMarker() {
-      addDoc(collection(db, 'pins'), {
+      addDoc(collection(db, 'markers'), {
         id: this.id += 1,
+        // id: this.nextId,
         // markers: new GeoPoint(Number(this.latitude), Number(this.longitude)),
-        markers: new GeoPoint(Number(this.nowMarker.position.latitude), Number(this.nowMarker.position.longitude)),
+        position: new GeoPoint(Number(this.nowMarker.position.latitude), Number(this.nowMarker.position.longitude)),
         // menuTxt: this.menuTxt,
         // place: this.place,
+        infoWinOpen: false,
         created: serverTimestamp(),
-        pinImgUrl: this.pinImgUrl,
-        pinImgFile: this.pinImgFile,
+        markerImgUrl: this.markerImgUrl,
+        markerImgFile: this.markerImgFile,
+
+        regName: this.regName,
+        reaction: this.reaction,
       })
       .then((doc) => {
         console.log(`データ追加に成功しました（${doc.id}）`);
+        this.markers.splice(-1,1)   // addMarker saveMarkerのidを調整
         //追加に成功したら入力データを空にする
         this.latitude = '';
         this.longitude = '';
-        this.file = '';
+        this.file = [];
+        this.regName = '';
+        this.reaction = '';
         // this.place = '';
         const markerImgUrlRemain = document.getElementById('fileImg');
         markerImgUrlRemain.value = '';
+
+        // this.nextId++;
       })
       .catch(error => {
         //エラー時の処理
@@ -436,46 +520,60 @@ mounted(){
     //firestoreのデータを削除
     async removeMarker(id, photo) {
       //削除ボタンをクリックした商品データをfirestore内から削除
-      const delQuery = query(collection(db, 'pins'), where('id', '==', id))
+      const delQuery = query(collection(db, 'markers'), where('id', '==', id))
       const delSnapshot = await getDocs(delQuery);
       delSnapshot.forEach((delSnap) => {
         // console.log(doc.id, " => ", doc.data());
         console.log(delSnap.id);
-        deleteDoc(doc(db, 'pins', delSnap.id));
+        deleteDoc(doc(db, 'markers', delSnap.id));
       });
       //storage内の画像データも同時に削除
       if(photo) {
-        const delPhotoRef = ref(storage, `images/${photo}`);
-        deleteObject(delPhotoRef).then(() => {
-          console.log("Photo deleted successfully")
-        }).catch((error) => {
-          console.log("Error Photo deleted", error)
-        });
-        // console.log('インデックス',id);
+        for(let i = 0; i < photo.length; i++) {
+          const delPhotoRef = ref(storage, `images/${photo[i]}`);
+          deleteObject(delPhotoRef).then(() => {
+            console.log("Photo deleted successfully")
+          }).catch((error) => {
+            console.log("Error Photo deleted", error)
+          });
+          // console.log('インデックス',id);
+        }
       }
     },
     //画像データをアップロード
-    imgUpload() {
-      //ファイルの取得
-      this.file = this.$refs.imgUp.files[0];
-      // this.file = e.target.files[0];
-      //画像ファイルへの参照を作成
-      const userImageRef = ref(storage, `images/${this.file.name}`)
-      //画像ファイルのアップロードメソッド
-      uploadBytesResumable(userImageRef, this.file).then((snapshot) => {
-        console.log('Uploaded a blob or file!', snapshot);
-        getDownloadURL(snapshot.ref)
-        .then((downloadURL) => {
-          //firestoreにURLとファイル名を保存するため
-          this.pinImgUrl = downloadURL;
-          this.pinImgFile = this.file.name;
-          console.log('Success!', downloadURL);
-        })
-        .catch((error) => {
-          console.error(error)
-        })
-      });
+    imageDataUpdate(index) {
+      console.log(index)
+      const result = this.$refs.imgUp
+      this.file = result[index].files
     },
+    imgUpload() {
+      for(let i = 0; i < this.file.length; i++) {
+        //ファイルの取得
+        // this.file[i] = this.$refs.imgUp.files[i];
+        // this.file = this.$refs.imgUp.files[0]
+        // }
+        // console.log(this.file)
+        // this.file = e.target.files[0];
+        //画像ファイルへの参照を作成
+        const userImageRef = ref(storage, `images/${this.file[i].name}`)
+        //画像ファイルのアップロードメソッド
+        uploadBytesResumable(userImageRef, this.file[i]).then((snapshot) => {
+          console.log('Uploaded a blob or file!', snapshot);
+          getDownloadURL(snapshot.ref)
+          .then((downloadURL) => {
+            //firestoreにURLとファイル名を保存するため
+            this.markerImgUrl[i] = downloadURL;
+            console.log('Success!', downloadURL);
+            this.markerImgFile[i] = this.file[i].name;
+            console.log('Success!', this.file[i].name);
+          })
+          .catch((error) => {
+            console.error(error)
+          })
+        });
+      }
+    },
+  
   
 
 //<!-- <p>firebase</p> -->
@@ -498,22 +596,28 @@ mounted(){
           latitude: this.currentPlace.geometry.location.lat(),
           longitude: this.currentPlace.geometry.location.lng(),
         };
+        
         this.markers.push({
-          id: this.nextId,
+          // id: this.nextId,
+          id: this.id,
           position: marker,
           infoWinOpen: false,
           place: this.place,
+          regName: this.regName,
+          reaction: this.reaction,
         });
         // this.places.push(this.currentPlace);
         console.log(this.markers)
         this.center = marker;
         this.currentPlace = null;
-        this.nextId++;
+        // this.nextId++;
       }
     },
     geolocate: function () {
       navigator.geolocation.getCurrentPosition((position) => {
         this.center = {
+          // lat: position.coords.latitude,
+          // lng: position.coords.longitude,
           lat: position.coords.latitude,
           lng: position.coords.longitude,
         };
@@ -535,7 +639,7 @@ mounted(){
     max-width: 100% !important;
     width: 100%;
 } */
-.miniwindow {
+/* .miniwindow {
   width: 300px;
   height: 900px;
   background-color: #fff;
@@ -546,20 +650,20 @@ mounted(){
   bottom: 0;
   z-index: 100;
   opacity: 60%;
-}
+} */
 
 .gm-style-iw {
   position: relative !important;
   /* max-width: 100% !important; */
-  top: 250px !important;
+  top: 2px !important;
   left: 0 !important;
 }
 
 .gm-style img {
   width: 10%;
 }
-.gm-style .gm-style-iw-t::after {
+/* .gm-style .gm-style-iw-t::after {
     display: none;
-}
+} */
 
 </style>
