@@ -4,7 +4,8 @@
     <div>
       <h2>Search and add a pin</h2>
       <GmapAutocomplete @place_changed="setPlace" />
-      <button @click="addMarker">Add</button>
+      <button @click="addMarker"><img src="https://img.icons8.com/external-flaticons-flat-flat-icons/64/000000/external-location-contact-us-flaticons-flat-flat-icons.png"/>
+      <br>Add</button>
     </div>
     <br />
     <GmapMap
@@ -50,16 +51,22 @@
                 <!-- <button v-on:click="note">✏️</button><br> -->
                 <!-- <textarea name="comment" id="" cols="30" rows="10"></textarea> --> 
                 <label>place:<input v-model="regName" type="text"></label><br> 
-                <label>photo：<input ref="imgUp" type="file" id="fileImg" @change="imageDataUpdate(index)" multiple></label>
-                <button @click="imgUpload">アップロード</button>
-                <button @click="saveMarker" class="btn_confirm">add on firebase</button>
+                <label class="photoSelected"><img src="https://img.icons8.com/wired/64/000000/add-image.png"/>
+                <input ref="imgUp" type="file" id="fileImg" @change="imageDataUpdate(index)" multiple></label>
+                <button @click="imgUpload" :disabled="!imgSelected">
+                  <span class="material-symbols-outlined">file_upload</span>
+                </button>
+                <button @click="saveMarker" class="btn_confirm" :disabled="!reaction || !regName">SAVE</button>
                 <p>{{ m.regName }} {{ m.reaction }}</p>
                 <!-- <ul>
                   <li v-for="(miu, index) in markers[index].markerImgUrl" :key="index">
                     <p v-if="miu"><img :src="miu" alt=""></p>
                   </li>
                 </ul> -->
-                <button @click="removeMarker(m.id, m.markerImgFile)">マーカー削除</button>
+                <button @click="removeMarker(m.id, m.markerImgFile)">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-trash3" viewBox="0 0 16 16">
+                  <path fill-rule="evenodd" d="M6.5 1a.5.5 0 0 0-.5.5v1h4v-1a.5.5 0 0 0-.5-.5h-3ZM11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3A1.5 1.5 0 0 0 5 1.5v1H2.506a.58.58 0 0 0-.01 0H1.5a.5.5 0 0 0 0 1h.538l.853 10.66A2 2 0 0 0 4.885 16h6.23a2 2 0 0 0 1.994-1.84l.853-10.66h.538a.5.5 0 0 0 0-1h-.995a.59.59 0 0 0-.01 0H11Zm1.958 1H3.042l.846 10.58a1 1 0 0 0 .997.92h6.23a1 1 0 0 0 .997-.92l.846-10.58Zm-7.487 1a.5.5 0 0 1 .528.47l.5 8.5a.5.5 0 0 1-.998.06L5 5.03a.5.5 0 0 1 .47-.53Zm5.058 0a.5.5 0 0 1 .47.53l-.5 8.5a.5.5 0 1 1-.998-.06l.5-8.5a.5.5 0 0 1 .528-.47ZM8 4.5a.5.5 0 0 1 .5.5v8.5a.5.5 0 0 1-1 0V5a.5.5 0 0 1 .5-.5Z"/></svg>
+                </button>
                 <!-- <button>submit</button><br> -->
             </div>
         </div>
@@ -70,22 +77,31 @@
     <main>
       <section id="mv" class="mv__less">
         <div class="copy__wrapper">
-          <h2 class="mv__ttl">add marker</h2>
-          <h3>Save On firebase</h3>
+          <h2 class="mv__ttl"></h2>
+          <!-- <h3>Save On firebase</h3> -->
           <!-- <label>name of the place：<input v-model="place" type="text"></label> -->
           
           <h2 class="mv__ttl">LIST</h2>
 
           <!-- とりあえず表示 -->
+          <div class="select-nav">
+              <label><input type="radio" v-model="reaction" value="">❤️REACTIONS</label>
+              <label><input type="radio" v-model="reaction" value="❤️">❤️</label>
+              <label><input type="radio" v-model="reaction" value="👍🏽">👍🏽</label>
+              <label><input type="radio" v-model="reaction" value="👎🏽">👎🏽</label>
+              <label><input type="radio" v-model="reaction" value="⭐️">⭐️</label>
+          </div>
         <ul class="regi_markers">
-          <li v-for="(marker, index) in markers" :key="index">
-            <p v-if="marker.id">{{ marker.id }}</p>
+          <li v-for="(marker, index) in filteredList" :key="index">
+            <!-- <p v-if="marker.id">{{ marker.id }}</p> -->
             <p v-if="marker.regName">{{ marker.regName }}</p>
+            <p v-if="marker.reaction">{{ marker.reaction }}</p>
             <!-- <p v-if="pin.place">{{ pin.place }}</p> -->
             <ul>
-              <li v-for="(posi, index) in markers[index].position" :key="index">
+              
+              <!-- <li v-for="(posi, index) in markers[index].position" :key="index">
                 <p v-if="posi">{{ posi }}</p>
-              </li>
+              </li> -->
             </ul>
             <!-- <img style="width: 20%; height: 20%;" :src="marker.markerImgUrl"> -->
             <ul class="mius">
@@ -93,6 +109,7 @@
                 <p v-if="miu"><img :src="miu" alt=""></p>
               </li>
             </ul>
+            
           <button @click="removeMarker(marker.id, marker.markerImgFile)">delete</button>
           </li>
         </ul>
@@ -154,7 +171,9 @@ export default {
       markerImgUrl: [],
       markerImgFile:[],
       file: [],
-
+      imgSelected: false,
+      selected:'',
+      select:'',
       reaction: '',
       regName: '',
       styles: [
@@ -477,7 +496,14 @@ mounted(){
     })
   },
 //<!-- <p>firebase</p> -->
-
+  computed: {
+    filteredList() {
+      return this. markers.filter(
+        (marker) => !marker.reaction.indexOf(this.reaction)
+      );
+    }
+  },
+  
   methods: {
     //<!-- <p>firebase</p> -->
     //firestoreにデータを追加 map
@@ -509,7 +535,7 @@ mounted(){
         // this.place = '';
         const markerImgUrlRemain = document.getElementById('fileImg');
         markerImgUrlRemain.value = '';
-
+        this.$router.go({path: this.$router.currentRoute.path, force: true})
         // this.nextId++;
       })
       .catch(error => {
@@ -545,6 +571,8 @@ mounted(){
       console.log(index)
       const result = this.$refs.imgUp
       this.file = result[index].files
+      //ファイル選択したらアップロードボタンを押せるようにする
+      this.imgSelected = true;
     },
     imgUpload() {
       for(let i = 0; i < this.file.length; i++) {
@@ -566,6 +594,8 @@ mounted(){
             console.log('Success!', downloadURL);
             this.markerImgFile[i] = this.file[i].name;
             console.log('Success!', this.file[i].name);
+            //アップロードが終わったらアップロードボタンを押せなくする
+            this.imgSelected = false;
           })
           .catch((error) => {
             console.error(error)
@@ -573,7 +603,7 @@ mounted(){
         });
       }
     },
-  
+
   
 
 //<!-- <p>firebase</p> -->
@@ -652,9 +682,12 @@ mounted(){
   opacity: 60%;
 } */
 
+
+/*infowindowの全体*/
 .gm-style-iw {
-  position: relative !important;
+  /* position: relative !important; */
   /* max-width: 100% !important; */
+  width: 300px;
   top: 2px !important;
   left: 0 !important;
 }
@@ -662,8 +695,26 @@ mounted(){
 .gm-style img {
   width: 10%;
 }
-/* .gm-style .gm-style-iw-t::after {
-    display: none;
-} */
+/*infowindowの枠*/
+.gm-style .gm-style-iw-c {
+  margin-top: -20px;
+}
+/*infowindowの先*/
+.gm-style .gm-style-iw-t::after {
+    /* display: none; */
+    margin-top: -20px;
+}
+
+.uphotoSelected img{
+
+}
+/* ホバー時 */
+.photoSelected:hover {
+  box-shadow: 0 8px 10px -2px rgba(0, 0, 0, 0.2); /* 影を表示 */
+}
+
+.photoSelected input {
+display:none; /* アップロードボタンのスタイルを無効にする */
+}
 
 </style>
