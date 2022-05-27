@@ -2,9 +2,12 @@
   <div>
     <p class="miniwindow">{{ nowMarker.message }}</p>
     <div>
-      <h2>Search and add a pin</h2>
-      <GmapAutocomplete @place_changed="setPlace" />
-      <button @click="addMarker"><img src="https://img.icons8.com/external-flaticons-flat-flat-icons/64/000000/external-location-contact-us-flaticons-flat-flat-icons.png"/>
+      <h1 class="titile">This can help you remember unforgettable places you've ever been!</h1>
+      <!-- <h2>Search and add a pin</h2> -->
+      <GmapAutocomplete 
+      placeholder="Search and add a pin" @place_changed="setPlace"/>
+
+      <button class="markerImg" @click="addMarker"><img src="https://img.icons8.com/external-flaticons-flat-flat-icons/64/000000/external-location-contact-us-flaticons-flat-flat-icons.png"/>
       <br>Add</button>
     </div>
     <br />
@@ -29,7 +32,7 @@
 140.76764207077298
         35.7056232
         139.751919-->
- 
+
 
         </GmapMarker>
       <GmapInfoWindow
@@ -39,24 +42,27 @@
         :opened="m.infoWinOpen"
         @closeclick="m.infoWinOpen = false">
         <div class="infowindow">
-            <div id="btn">
-                <select v-model="reaction">
+            <div>
+                <select class="btn" v-model="reaction">
                     <option value="">❤️REACTIONS</option>
-                    <option value="❤️">❤️</option>
-                    <option value="👍🏽">👍🏽</option>
-                    <option value="👎🏽">👎🏽</option>
-                    <option value="⭐️">⭐️</option>
+                    <option value="❤️">❤️:Favorite</option>
+                    <option value="👍🏽">👍🏽:cool</option>
+                    <option value="👎🏽">👎🏽:bad</option>
+                    <option value="⭐️">⭐️:wanan check out</option>
                 </select><br>
                 
                 <!-- <button v-on:click="note">✏️</button><br> -->
                 <!-- <textarea name="comment" id="" cols="30" rows="10"></textarea> --> 
-                <label>place:<input v-model="regName" type="text"></label><br> 
-                <label class="photoSelected"><img src="https://img.icons8.com/wired/64/000000/add-image.png"/>
-                <input ref="imgUp" type="file" id="fileImg" @change="imageDataUpdate(index)" multiple></label>
-                <button @click="imgUpload" :disabled="!imgSelected">
-                  <span class="material-symbols-outlined">file_upload</span>
-                </button>
-                <button @click="saveMarker" class="btn_confirm" :disabled="!reaction || !regName">SAVE</button>
+                <label><input class="regName" v-model="regName" type="text" placeholder="PLACE"></label><br> 
+                <label><textarea class="note" v-model="note" cols="15" rows="3" placeholder="NOTE"></textarea></label>
+                <div class="icon_btn"><!-- icon for upload photos, SAVE btn -->
+                  <label class="photoSelected"><img src="https://img.icons8.com/wired/40/000000/add-image.png"/>
+                  <input ref="imgUp" type="file" id="fileImg" @change="imageDataUpdate(index)" multiple></label>
+                  <button @click="imgUpload" :disabled="!imgSelected">
+                    <span class="material-symbols-outlined">file_upload</span>
+                  </button>
+                  <button @click="saveMarker" class="btn_confirm" :disabled="!reaction || !regName">SAVE</button>
+                </div>
                 <p>{{ m.regName }} {{ m.reaction }}</p>
                 <!-- <ul>
                   <li v-for="(miu, index) in markers[index].markerImgUrl" :key="index">
@@ -85,17 +91,23 @@
 
           <!-- とりあえず表示 -->
           <div class="select-nav">
-              <label><input type="radio" v-model="reaction" value="">❤️REACTIONS</label>
-              <label><input type="radio" v-model="reaction" value="❤️">❤️</label>
-              <label><input type="radio" v-model="reaction" value="👍🏽">👍🏽</label>
-              <label><input type="radio" v-model="reaction" value="👎🏽">👎🏽</label>
-              <label><input type="radio" v-model="reaction" value="⭐️">⭐️</label>
+              <label><input type="radio" v-model="reaction" value="">All</label>
+              <label><input type="radio" v-model="reaction" value="❤️">❤️:Favorite</label>
+              <label><input type="radio" v-model="reaction" value="👍🏽">👍🏽:cool</label>
+              <label><input type="radio" v-model="reaction" value="👎🏽">👎🏽:bad</label>
+              <label><input type="radio" v-model="reaction" value="⭐️">⭐️:wanna check out</label>
           </div>
         <ul class="regi_markers">
           <li v-for="(marker, index) in filteredList" :key="index">
             <!-- <p v-if="marker.id">{{ marker.id }}</p> -->
-            <p v-if="marker.regName">{{ marker.regName }}</p>
-            <p v-if="marker.reaction">{{ marker.reaction }}</p>
+            <!-- <p v-if="marker.reaction"></p> -->
+            <p class="place_name" v-if="marker.regName">{{ marker.reaction }}{{ marker.regName }}
+              <button @click="toggle(marker.id)">{{ isActive(marker.id) ? '▲': '▼' }}</button>
+              <button @click="removeMarker(marker.id, marker.markerImgFile)">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-trash3" viewBox="0 0 16 16">
+              <path fill-rule="evenodd" d="M6.5 1a.5.5 0 0 0-.5.5v1h4v-1a.5.5 0 0 0-.5-.5h-3ZM11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3A1.5 1.5 0 0 0 5 1.5v1H2.506a.58.58 0 0 0-.01 0H1.5a.5.5 0 0 0 0 1h.538l.853 10.66A2 2 0 0 0 4.885 16h6.23a2 2 0 0 0 1.994-1.84l.853-10.66h.538a.5.5 0 0 0 0-1h-.995a.59.59 0 0 0-.01 0H11Zm1.958 1H3.042l.846 10.58a1 1 0 0 0 .997.92h6.23a1 1 0 0 0 .997-.92l.846-10.58Zm-7.487 1a.5.5 0 0 1 .528.47l.5 8.5a.5.5 0 0 1-.998.06L5 5.03a.5.5 0 0 1 .47-.53Zm5.058 0a.5.5 0 0 1 .47.53l-.5 8.5a.5.5 0 1 1-.998-.06l.5-8.5a.5.5 0 0 1 .528-.47ZM8 4.5a.5.5 0 0 1 .5.5v8.5a.5.5 0 0 1-1 0V5a.5.5 0 0 1 .5-.5Z"/></svg>
+            </button>
+            </p>
             <!-- <p v-if="pin.place">{{ pin.place }}</p> -->
             <ul>
               
@@ -105,12 +117,13 @@
             </ul>
             <!-- <img style="width: 20%; height: 20%;" :src="marker.markerImgUrl"> -->
             <ul class="mius">
-              <li v-for="(miu, index) in markers[index].markerImgUrl" :key="index">
-                <p v-if="miu"><img :src="miu" alt=""></p>
+              <li class="mius_item" v-for="(miu, index) in markers[index].markerImgUrl" :key="index">
+                <p v-show="show_contents.indexOf(marker.id) >= 0"><img :src="miu" alt=""></p>
               </li>
             </ul>
-            
-          <button @click="removeMarker(marker.id, marker.markerImgFile)">delete</button>
+            <p class="dispNote" v-if="marker.note">{{ marker.note }}</p>
+
+          
           </li>
         </ul>
         </div><!--copy__wrapper-->
@@ -163,7 +176,7 @@ export default {
       lng: '',
       infoWinOpen: false,
       places: '',
-
+      
       // nextId: 1,
       nowMarker: {},
 
@@ -172,10 +185,13 @@ export default {
       markerImgFile:[],
       file: [],
       imgSelected: false,
+      show_contents: [],
       selected:'',
       select:'',
       reaction: '',
       regName: '',
+      note: '',
+
       styles: [
     {
         "featureType": "administrative.country",
@@ -522,6 +538,7 @@ mounted(){
 
         regName: this.regName,
         reaction: this.reaction,
+        note: this.note,
       })
       .then((doc) => {
         console.log(`データ追加に成功しました（${doc.id}）`);
@@ -532,7 +549,8 @@ mounted(){
         this.file = [];
         this.regName = '';
         this.reaction = '';
-        // this.place = '';
+        this.note = '';
+
         const markerImgUrlRemain = document.getElementById('fileImg');
         markerImgUrlRemain.value = '';
         this.$router.go({path: this.$router.currentRoute.path, force: true})
@@ -603,16 +621,10 @@ mounted(){
         });
       }
     },
-
-  
-
 //<!-- <p>firebase</p> -->
-
-
-
-    note() {
-          this.$router.push('./note')
-    },
+    // note() {
+    //       this.$router.push('./note')
+    // },
     openOriginalWindow(d) {
       console.log("OK?");
       this.nowMarker = d;
@@ -635,6 +647,7 @@ mounted(){
           place: this.place,
           regName: this.regName,
           reaction: this.reaction,
+          note: this.note,
         });
         // this.places.push(this.currentPlace);
         console.log(this.markers)
@@ -658,12 +671,31 @@ mounted(){
       this.currentPlace = marker.position;
       marker.infoWinOpen = true;
     },//toggleInfoWindow
+
+     //選択したボタンの画像表示・非表示用
+    toggle(id) {
+      if(this.show_contents.indexOf(id) >= 0) {
+        this.show_contents = this.show_contents.filter(n => n !== id)
+      } else {
+        this.show_contents.push(id)
+      }
+    },
+    //選択したボタンの名前を「画像表示」⇔「画像非表示」に変更用
+    isActive(id) {
+      return !!this.show_contents.find(n => n === id)
+    }
   }//methods
 }//export default
 </script>
 
 
 <style>
+
+.titile {
+  font-family: 'Pacifico', cursive;
+  font-weight: 100;
+  /* font-family: 'Shadows Into Light', cursive; */
+}
 /* 
 .gm-style-iw {
     max-width: 100% !important;
@@ -681,7 +713,29 @@ mounted(){
   z-index: 100;
   opacity: 60%;
 } */
+.btn, .regName, .note {
+  width: 200px;
+}
+.regName, .note {
+  padding-left: 0;
+  padding-right: 0;
+}
+.regName {
+  margin: 10px 0 3px 0 ;
+}
+.markerImg img{
+  width: 30px;
+  height: 30px;
+  
+}
 
+li {
+  list-style: none;
+}
+ul,li {
+  /* padding: 0 5px;上下左右 */
+  padding:  0 5px 0 5px;/*上右下左*/
+}
 
 /*infowindowの全体*/
 .gm-style-iw {
@@ -692,9 +746,9 @@ mounted(){
   left: 0 !important;
 }
 
-.gm-style img {
+/* .gm-style img {
   width: 10%;
-}
+} */
 /*infowindowの枠*/
 .gm-style .gm-style-iw-c {
   margin-top: -20px;
@@ -704,10 +758,13 @@ mounted(){
     /* display: none; */
     margin-top: -20px;
 }
-
-.uphotoSelected img{
-
+div.icon_btn {
+  height: 40px;
+  display: flex;
+  justify-content: center;
+  gap: 5px;
 }
+
 /* ホバー時 */
 .photoSelected:hover {
   box-shadow: 0 8px 10px -2px rgba(0, 0, 0, 0.2); /* 影を表示 */
@@ -716,5 +773,37 @@ mounted(){
 .photoSelected input {
 display:none; /* アップロードボタンのスタイルを無効にする */
 }
+.select-nav input[type="radio"]{
+  -webkit-appearance: none;
+  appearance: none;
+  opacity:0;
+  margin: 0;
+}
+
+.select-nav label {
+  background: rgb(227, 231, 231);
+  padding: 5px 10px;
+  margin: 10px;
+  cursor: pointer;
+  border-radius: 10px;
+  display: inline-block;
+}
+.mius {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  grid-gap: 1rem;
+}
+.mius_item img{
+  display: block;
+  max-width: 100%;
+}
+
+.place_name {
+  font-size: 30px;
+  padding: 1rem 2rem;
+  border-top: 3px solid #000;
+  border-bottom: 3px solid #000;
+}
+
 
 </style>
