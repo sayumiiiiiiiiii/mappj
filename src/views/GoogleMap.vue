@@ -2,7 +2,7 @@
   <div>
     <p class="miniwindow">{{ nowMarker.message }}</p>
     <div>
-      <h1 class="titile">This can help you remember unforgettable places you've ever been!</h1>
+      <h1 class="titile">This can help you remember unforgettable places that you've ever been!</h1>
       <!-- <h2>Search and add a pin</h2> -->
       <GmapAutocomplete 
       placeholder="Search and add a pin" @place_changed="setPlace"/>
